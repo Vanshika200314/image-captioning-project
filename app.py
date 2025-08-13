@@ -6,6 +6,8 @@ import pickle
 from model import EncoderCNN, DecoderRNN
 from torchvision import transforms
 
+# --- THIS CLASS DEFINITION IS REQUIRED FOR DEPLOYMENT ---
+# It must be in this file so Gunicorn can find it when pickle loads the vocab.
 class Vocabulary:
     def __init__(self, freq_threshold):
         self.itos={0:"<PAD>",1:"<START>",2:"<END>",3:"<UNK>"}
@@ -15,6 +17,7 @@ class Vocabulary:
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 
+# The rest of the file is the same, but we include it for completeness
 print("--- Loading your custom-trained model ---")
 device = torch.device("cpu")
 with open("vocab.pkl", "rb") as f:
