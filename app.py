@@ -6,8 +6,7 @@ import pickle
 from model import EncoderCNN, DecoderRNN
 from torchvision import transforms
 
-# --- THIS CLASS DEFINITION IS REQUIRED FOR DEPLOYMENT ---
-# It must be in this file so Gunicorn can find it when pickle loads the vocab.
+# This class must be in this file for Gunicorn to work
 class Vocabulary:
     def __init__(self, freq_threshold):
         self.itos={0:"<PAD>",1:"<START>",2:"<END>",3:"<UNK>"}
@@ -17,7 +16,6 @@ class Vocabulary:
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 
-# The rest of the file is the same, but we include it for completeness
 print("--- Loading your custom-trained model ---")
 device = torch.device("cpu")
 with open("vocab.pkl", "rb") as f:
@@ -71,7 +69,11 @@ def index():
         
     return render_template('index.html')
 
+# This part is NOT used by Gunicorn but is good practice for running locally
 if __name__ == '__main__':
+    # Get port from environment variable, default to 5000 for local running
+    port = int(os.environ.get('PORT', 5000))
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
-    app.run(debug=True)
+    # Host must be '0.0.0.0' to be accessible from outside the container
+    app.run(host='0.0.0.0', port=port, debug=True)

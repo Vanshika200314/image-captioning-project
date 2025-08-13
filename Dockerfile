@@ -1,10 +1,13 @@
-# Start with a lightweight version of Python
-FROM python:3.10-slim
+# Start with a specific, stable version of Python
+FROM python:3.10.13-slim
+
+# Set environment variables to ensure logs are output correctly
+ENV PYTHONUNBUFFERED True
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy ONLY the requirements file first to leverage Docker's caching
+# Copy the requirements file first to leverage Docker's caching
 COPY requirements.txt .
 
 # Install the Python libraries
@@ -13,9 +16,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Now, copy the rest of your application, including the model files
 COPY . .
 
-# Tell Render that your application will be listening on port 8080
-EXPOSE 8080
+# EXPOSE is good practice but not strictly required by Render.
+# The Gunicorn command below is the critical part.
+EXPOSE 10000
 
-# The command that Render will use to start your application
-# It uses Gunicorn, a production-ready web server.
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "0", "app:app"]
+# The final, robust command to start your application.
+# It tells Gunicorn to use the $PORT variable provided by Render.
+CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "--workers", "1", "--threads", "8", "--timeout", "0", "app:app"]
