@@ -1,48 +1,34 @@
-"""
-This is the final application. It provides a simple web interface
-for users to upload an image and get a caption from the custom-trained
-Attention-based model.
-"""
 import torch
 from flask import Flask, render_template, request
 from PIL import Image
 import os
 import pickle
-
-# Import the final model architecture
 from model import EncoderCNN, DecoderRNN
 from torchvision import transforms
 
-# This class is required for pickle to load the vocabulary
 class Vocabulary:
     def __init__(self, freq_threshold):
-        self.itos = {0: "<PAD>", 1: "<START>", 2: "<END>", 3: "<UNK>"}
-        self.stoi = {k:v for v,k in self.itos.items()}
+        self.itos={0:"<PAD>",1:"<START>",2:"<END>",3:"<UNK>"}
+        self.stoi={k:v for v,k in self.itos.items()}
     def __len__(self): return len(self.itos)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 
-# --- Load Your Best Custom-Trained Model ---
 print("--- Loading your custom-trained model ---")
 device = torch.device("cpu")
 with open("vocab.pkl", "rb") as f:
     vocab = pickle.load(f)
 
-# Parameters for the Attention model
 embed_size, hidden_size, vocab_size, encoder_dim = 256, 256, len(vocab), 2048
-
 encoder = EncoderCNN(embed_size).to(device)
 decoder = DecoderRNN(embed_size, hidden_size, vocab_size, encoder_dim).to(device)
-
-# Load the weights from your best training run
 encoder.load_state_dict(torch.load("encoder-model.pth", map_location=device))
 decoder.load_state_dict(torch.load("decoder-model.pth", map_location=device))
 encoder.eval()
 decoder.eval()
 print("--- Your model loaded successfully ---")
 
-# Image transformation pipeline
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),

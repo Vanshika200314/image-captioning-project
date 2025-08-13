@@ -1,21 +1,5 @@
-# Python virtual environment
+# This is the final, correct version
 image-caption-env/
-
-# Python cache files
 __pycache__/
 *.pyc
-
-# Local model files - Render will download these, we don't upload them
-*.pth
-*.pkl
-
-# IDE and OS files
-.vscode/
-.idea/
-*.DS_Store
-
-# Static files uploaded by users
 static/uploads/
-
-# Any local test image folders
-test_images_from_dataset/
