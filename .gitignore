@@ -1,5 +1,10 @@
-# This is the final, correct version
+# Python virtual environment
 image-caption-env/
+
+# Python cache files
 __pycache__/
 *.pyc
+
+# User uploaded images - we still want to ignore these
 static/uploads/
+```4.  **Save the `.gitignore` file.**
