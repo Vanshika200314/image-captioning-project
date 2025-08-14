@@ -6,7 +6,7 @@ import pickle
 from model import EncoderCNN, DecoderRNN
 from torchvision import transforms
 
-# This class must be in this file for Gunicorn to work
+# --- THIS CLASS DEFINITION IS REQUIRED FOR DEPLOYMENT ---
 class Vocabulary:
     def __init__(self, freq_threshold):
         self.itos={0:"<PAD>",1:"<START>",2:"<END>",3:"<UNK>"}
@@ -23,7 +23,7 @@ with open("vocab.pkl", "rb") as f:
 
 embed_size, hidden_size, vocab_size, encoder_dim = 256, 256, len(vocab), 2048
 encoder = EncoderCNN(embed_size).to(device)
-decoder = DecoderRNN(embed_size, hidden_size, vocab_size, encoder_dim).to(device)
+decoder = DecoderRNN(embed_size, hidden_size, vocab_size, encoder_dim).to.to(device)
 encoder.load_state_dict(torch.load("encoder-model.pth", map_location=device))
 decoder.load_state_dict(torch.load("decoder-model.pth", map_location=device))
 encoder.eval()
@@ -69,11 +69,8 @@ def index():
         
     return render_template('index.html')
 
-# This part is NOT used by Gunicorn but is good practice for running locally
 if __name__ == '__main__':
-    # Get port from environment variable, default to 5000 for local running
     port = int(os.environ.get('PORT', 5000))
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
-    # Host must be '0.0.0.0' to be accessible from outside the container
     app.run(host='0.0.0.0', port=port, debug=True)
