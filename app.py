@@ -6,7 +6,7 @@ import pickle
 from model import EncoderCNN, DecoderRNN
 from torchvision import transforms
 
-# This class must be in this file for Gunicorn to work
+# This class MUST be in this file for the deployment to work
 class Vocabulary:
     def __init__(self, freq_threshold):
         self.itos={0:"<PAD>",1:"<START>",2:"<END>",3:"<UNK>"}
@@ -16,7 +16,7 @@ class Vocabulary:
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 
-print("--- Loading your custom-trained model ---")
+print("--- Loading your custom-trained model. This may take a moment. ---")
 device = torch.device("cpu")
 with open("vocab.pkl", "rb") as f:
     vocab = pickle.load(f)
@@ -28,7 +28,7 @@ encoder.load_state_dict(torch.load("encoder-model.pth", map_location=device))
 decoder.load_state_dict(torch.load("decoder-model.pth", map_location=device))
 encoder.eval()
 decoder.eval()
-print("--- Your model loaded successfully ---")
+print("--- Your model loaded successfully! ---")
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
@@ -52,11 +52,8 @@ def generate_caption(image_path):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    # Create the upload folder if it doesn't exist.
-    # This is a better place for it in a deployed app.
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
-        
     if request.method == 'POST':
         if 'file' not in request.files:
             return render_template('index.html', error="No file selected.")
@@ -67,10 +64,8 @@ def index():
         filename = file.filename
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-        
         caption = generate_caption(filepath)
-        
         return render_template('index.html', caption=caption, image_filename=filename)
-        
     return render_template('index.html')
 
+# The if __name__ == '__main__': block has been removed as it is not used by Gunicorn.
