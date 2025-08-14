@@ -1,42 +1,54 @@
-import torch
-from flask import Flask, render_template, request
-from PIL import Image
 import os
 import pickle
-from model import EncoderCNN, DecoderRNN
+import torch
+from flask import Flask, request, render_template
+from PIL import Image
 from torchvision import transforms
+from model import EncoderCNN, DecoderRNN
 
-# --- THIS CLASS DEFINITION IS REQUIRED FOR DEPLOYMENT ---
+# This class must be defined in the same file that calls pickle.load()
 class Vocabulary:
     def __init__(self, freq_threshold):
-        self.itos={0:"<PAD>",1:"<START>",2:"<END>",3:"<UNK>"}
-        self.stoi={k:v for v,k in self.itos.items()}
+        self.itos = {0: "<PAD>", 1: "<START>", 2: "<END>", 3: "<UNK>"}
+        self.stoi = {k: v for v, k in self.itos.items()}
     def __len__(self): return len(self.itos)
 
+# --- Initialize Flask App ---
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 
-print("--- Loading your custom-trained model ---")
+# --- Load Model (Done once at startup) ---
+print("--- Loading custom-trained model. This may take a moment. ---")
 device = torch.device("cpu")
-with open("vocab.pkl", "rb") as f:
-    vocab = pickle.load(f)
 
-embed_size, hidden_size, vocab_size, encoder_dim = 256, 256, len(vocab), 2048
-encoder = EncoderCNN(embed_size).to(device)
-decoder = DecoderRNN(embed_size, hidden_size, vocab_size, encoder_dim).to.to(device)
-encoder.load_state_dict(torch.load("encoder-model.pth", map_location=device))
-decoder.load_state_dict(torch.load("decoder-model.pth", map_location=device))
-encoder.eval()
-decoder.eval()
-print("--- Your model loaded successfully ---")
+try:
+    with open("vocab.pkl", "rb") as f:
+        vocab = pickle.load(f)
 
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
+    embed_size, hidden_size, vocab_size, encoder_dim = 256, 256, len(vocab), 2048
+    encoder = EncoderCNN(embed_size).to(device)
+    decoder = DecoderRNN(embed_size, hidden_size, vocab_size, encoder_dim).to(device)
+
+    encoder.load_state_dict(torch.load("encoder-model.pth", map_location=device))
+    decoder.load_state_dict(torch.load("decoder-model.pth", map_location=device))
+
+    encoder.eval()
+    decoder.eval()
+
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    print("--- Model loaded successfully! ---")
+    model_loaded_successfully = True
+except Exception as e:
+    print(f"!!! FATAL ERROR: Could not load model files: {e} !!!")
+    model_loaded_successfully = False
 
 def generate_caption(image_path):
+    if not model_loaded_successfully:
+        return "Error: The AI model failed to load."
     try:
         image = Image.open(image_path).convert("RGB")
         image_tensor = transform(image).unsqueeze(0).to(device)
@@ -69,8 +81,8 @@ def index():
         
     return render_template('index.html')
 
+# This part is not used by Gunicorn but is good for local testing
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(debug=True)

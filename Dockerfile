@@ -1,22 +1,19 @@
-# Start with a specific, stable version of Python
+# Use a specific, stable version of Python
 FROM python:3.10.13-slim
 
-# Set environment variables to ensure logs are output correctly
+# Set environment variables for stability
 ENV PYTHONUNBUFFERED True
+ENV FLASK_APP=app.py
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the requirements file first to leverage Docker's caching
+# Copy requirements first for caching
 COPY requirements.txt .
-
-# Install the Python libraries
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Now, copy the rest of your application, including the model files
+# Copy all application files, including models
 COPY . .
 
-# EXPOSE is good practice but not strictly required by Render.
-# The Gunicorn command below is the critical part.
-EXPOSE 10000
+# Run the Gunicorn server, binding to the port Render provides
 CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 app:app
