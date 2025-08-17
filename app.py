@@ -6,6 +6,7 @@ from PIL import Image
 from torchvision import transforms
 from model import EncoderCNN, DecoderRNN
 
+# This class MUST be defined here for pickle to work with the factory
 class Vocabulary:
     def __init__(self, freq_threshold):
         self.itos = {0: "<PAD>", 1: "<START>", 2: "<END>", 3: "<UNK>"}
@@ -27,10 +28,8 @@ def create_app():
         embed_size, hidden_size, vocab_size, encoder_dim = 256, 256, len(vocab), 2048
         encoder = EncoderCNN(embed_size).to(device)
         decoder = DecoderRNN(embed_size, hidden_size, vocab_size, encoder_dim).to(device)
-
         encoder.load_state_dict(torch.load("encoder-model.pth", map_location=device))
         decoder.load_state_dict(torch.load("decoder-model.pth", map_location=device))
-
         encoder.eval()
         decoder.eval()
 
@@ -55,7 +54,6 @@ def create_app():
                 return render_template('index.html', error="No file selected.")
             
             filename = file.filename
-            # Ensure the upload folder exists
             if not os.path.exists(app.config['UPLOAD_FOLDER']):
                 os.makedirs(app.config['UPLOAD_FOLDER'])
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
