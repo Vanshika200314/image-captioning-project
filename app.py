@@ -73,7 +73,3 @@ def generate_caption(image_path):
     except Exception as e:
         print(f"ERROR generating caption: {e}")
         return "An error occurred during caption generation."
-
-# This block is for local running only and will be ignored by Gunicorn
-if __name__ == '__main__':
-    app.run(debug=True)

@@ -5,9 +5,5 @@ image-caption-env/
 __pycache__/
 *.pyc
 
-# Ignore large model files
-*.pth
-*.pkl
-
 # Ignore user uploaded images
 static/uploads/
