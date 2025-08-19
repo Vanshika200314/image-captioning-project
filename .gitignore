@@ -1,4 +1,6 @@
 image-caption-env/
 __pycache__/
 *.pyc
+*.pth
+*.pkl
 static/uploads/
