@@ -31,13 +31,13 @@ decoder.load_state_dict(torch.load("decoder-model.pth", map_location=device))
 
 encoder.eval()
 decoder.eval()
+print("--- Model loaded successfully! ---")
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
-print("--- Model loaded successfully! ---")
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
