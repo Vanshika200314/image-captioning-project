@@ -5,6 +5,9 @@ image-caption-env/
 __pycache__/
 *.pyc
 
-# User uploaded images - we still want to ignore these
+# Ignore large model files
+*.pth
+*.pkl
+
+# Ignore user uploaded images
 static/uploads/
-```4.  **Save the `.gitignore` file.**

@@ -1,35 +1,44 @@
 import os
 import pickle
 import torch
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, url_for
 from PIL import Image
 from torchvision import transforms
 from model import EncoderCNN, DecoderRNN
 
-# This class MUST be defined here for pickle to work with the factory
 class Vocabulary:
     def __init__(self, freq_threshold):
         self.itos = {0: "<PAD>", 1: "<START>", 2: "<END>", 3: "<UNK>"}
         self.stoi = {k: v for v, k in self.itos.items()}
-    def __len__(self): return len(self.itos)
+    def __len__(self):
+        return len(self.itos)
 
 def create_app():
-    """Application Factory Function"""
     app = Flask(__name__)
     app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 
-    print("--- Loading custom-trained model inside create_app ---")
+    model_dir = "/mnt/models"
+    print("--- Loading custom-trained model from persistent disk ---")
     device = torch.device("cpu")
 
+    # We define these variables outside the try block
+    vocab = None
+    encoder = None
+    decoder = None
+    transform = None
+    model_loaded_successfully = False
+
     try:
-        with open("vocab.pkl", "rb") as f:
+        with open(os.path.join(model_dir, "vocab.pkl"), "rb") as f:
             vocab = pickle.load(f)
 
         embed_size, hidden_size, vocab_size, encoder_dim = 256, 256, len(vocab), 2048
         encoder = EncoderCNN(embed_size).to(device)
         decoder = DecoderRNN(embed_size, hidden_size, vocab_size, encoder_dim).to(device)
-        encoder.load_state_dict(torch.load("encoder-model.pth", map_location=device))
-        decoder.load_state_dict(torch.load("decoder-model.pth", map_location=device))
+
+        encoder.load_state_dict(torch.load(os.path.join(model_dir, "encoder-model.pth"), map_location=device))
+        decoder.load_state_dict(torch.load(os.path.join(model_dir, "decoder-model.pth"), map_location=device))
+
         encoder.eval()
         decoder.eval()
 
@@ -52,8 +61,9 @@ def create_app():
             file = request.files.get('file')
             if not file or not file.filename:
                 return render_template('index.html', error="No file selected.")
-            
+
             filename = file.filename
+            
             if not os.path.exists(app.config['UPLOAD_FOLDER']):
                 os.makedirs(app.config['UPLOAD_FOLDER'])
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -67,7 +77,7 @@ def create_app():
 
     def generate_caption(image_path):
         if not model_loaded_successfully:
-            return "Error: The AI model failed to load."
+            return "Error: The AI model failed to load on the server."
         try:
             image = Image.open(image_path).convert("RGB")
             image_tensor = transform(image).unsqueeze(0).to(device)
