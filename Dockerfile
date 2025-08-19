@@ -1,22 +1,8 @@
-# Use a specific, stable version of Python for reliability
 FROM python:3.10.13-slim
-
-# Set an environment variable to ensure logs are shown immediately
 ENV PYTHONUNBUFFERED True
-
-# Set the working directory inside the container
 WORKDIR /app
-
-# Copy the requirements file first to leverage Docker's caching
 COPY requirements.txt .
-
-# Install all Python libraries from the requirements file
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Now, copy all your application files, including the large models
+RUN pip install -r requirements.txt
 COPY . .
-
-# The final, correct command to start the Gunicorn server.
-# This "shell" form correctly uses the $PORT variable provided by Render.
-# This line is the definitive fix for the port error.
-CMD ["waitress-serve", "--host=0.0.0.0", "--port=$PORT", "wsgi:app"]
+# Use the simple, robust Gunicorn command pointing to app.py
+CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "app:app"]
